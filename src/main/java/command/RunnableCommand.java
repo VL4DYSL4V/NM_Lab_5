@@ -11,8 +11,6 @@ import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
 import org.apache.commons.math3.optim.univariate.BrentOptimizer;
 import org.apache.commons.math3.optim.univariate.SearchInterval;
 import org.apache.commons.math3.optim.univariate.UnivariateObjectiveFunction;
-import state.function.LaboratoryFunction;
-import state.function.Variant21Function;
 
 public class RunnableCommand extends AbstractRunnableCommand {
 
@@ -25,15 +23,14 @@ public class RunnableCommand extends AbstractRunnableCommand {
     @Override
     public void execute(String[] strings) {
         assertStateSanity();
-        LaboratoryFunction laboratoryFunction = new Variant21Function();
-        int nParts = getNPArts(laboratoryFunction);
+        int nParts = getNPArts();
         ConsoleUtils.println(String.format("Steps: %d", nParts));
-        double integral = calculateIntegral(laboratoryFunction, nParts);
+        double integral = calculateIntegral(nParts);
 
         SimpsonIntegrator simpson = new SimpsonIntegrator();
         Interval interval = (Interval) applicationState.getVariable("interval");
-        double actualIntegral = simpson
-                .integrate(1000, laboratoryFunction.getFunction(), interval.getInf(), interval.getSup());
+        UnivariateFunction function = (UnivariateFunction) applicationState.getVariable("function");
+        double actualIntegral = simpson.integrate(Math.max(nParts, 500_000), function, interval.getInf(), interval.getSup());
 
         ConsoleUtils.println(String.format("My integral - actual integral = %f", integral - actualIntegral));
     }
@@ -41,9 +38,7 @@ public class RunnableCommand extends AbstractRunnableCommand {
     /**
      * Find 'n' from: |Precision| <= max[a, b]( |f'(x)| ) * ((b - a) ^ 2) / 2n
      * */
-    private int getNPArts(LaboratoryFunction laboratoryFunction) {
-        ValidationUtils.requireNonNull(laboratoryFunction);
-
+    private int getNPArts() {
         double precision = (Double) applicationState.getVariable("precision");
         Interval interval = (Interval) applicationState.getVariable("interval");
         double factor = Math.pow(interval.getSup() - interval.getInf(), 2) / (2 * precision);
@@ -51,7 +46,8 @@ public class RunnableCommand extends AbstractRunnableCommand {
         MaxEval maxEval = new MaxEval(1000);
         double relativeTolerance = 0.001;
         double absoluteTolerance = 0.001;
-        UnivariateFunction absOfFirstDerivative = (x) -> Math.abs(laboratoryFunction.getFirstDerivative().value(x));
+        UnivariateFunction derivative = (UnivariateFunction) applicationState.getVariable("derivative");
+        UnivariateFunction absOfFirstDerivative = (x) -> Math.abs(derivative.value(x));
         UnivariateObjectiveFunction objective = new UnivariateObjectiveFunction(absOfFirstDerivative);
         SearchInterval searchInterval = new SearchInterval(interval.getInf(), interval.getSup());
 
@@ -64,15 +60,15 @@ public class RunnableCommand extends AbstractRunnableCommand {
     /**
      * Method of right squares
      * */
-    private double calculateIntegral(LaboratoryFunction laboratoryFunction, int nParts) {
-        ValidationUtils.requireNonNull(laboratoryFunction);
+    private double calculateIntegral(int nParts) {
         ValidationUtils.requireGreaterOrEqualThan(nParts, 1, "Step must be >= 1");
 
+        UnivariateFunction function = (UnivariateFunction) applicationState.getVariable("function");
         Interval interval = (Interval) applicationState.getVariable("interval");
         double dx = (interval.getSup() - interval.getInf()) / nParts;
         double result = 0;
         for (int i = 1; i <= nParts; i++) {
-            result += laboratoryFunction.getFunction().value(interval.getInf() + i * dx);
+            result += function.value(interval.getInf() + i * dx);
         }
         return result * dx;
     }
@@ -80,7 +76,9 @@ public class RunnableCommand extends AbstractRunnableCommand {
     private void assertStateSanity() {
         ValidationUtils.requireNonNull(
                 applicationState.getVariable("interval"),
-                applicationState.getVariable("precision"));
+                applicationState.getVariable("precision"),
+                applicationState.getVariable("function"),
+                applicationState.getVariable("derivative"));
     }
 
 }
