@@ -16,6 +16,8 @@ public class RunnableCommand extends AbstractRunnableCommand {
 
     private static final String NAME = "run";
 
+    private static final int MAX_STEPS_AMOUNT = 1_000_000;
+
     public RunnableCommand() {
         super(NAME);
     }
@@ -30,7 +32,7 @@ public class RunnableCommand extends AbstractRunnableCommand {
         SimpsonIntegrator simpson = new SimpsonIntegrator();
         Interval interval = (Interval) applicationState.getVariable("interval");
         UnivariateFunction function = (UnivariateFunction) applicationState.getVariable("function");
-        double actualIntegral = simpson.integrate(Math.max(nParts, 500_000), function, interval.getInf(), interval.getSup());
+        double actualIntegral = simpson.integrate(Integer.MAX_VALUE, function, interval.getInf(), interval.getSup());
 
         ConsoleUtils.println(String.format("My integral - actual integral = %f", integral - actualIntegral));
     }
@@ -55,10 +57,8 @@ public class RunnableCommand extends AbstractRunnableCommand {
         double pointOfMaximum = optimizer.optimize(objective, GoalType.MAXIMIZE, searchInterval, maxEval).getPoint();
 
         int out = (int) Math.floor(factor * absOfFirstDerivative.value(pointOfMaximum));
-        if (out < 0 || out == Integer.MAX_VALUE) {
-            return Integer.MAX_VALUE;
-        }
-        return out + 1;
+        out = Math.max(out, 1);
+        return Math.min(out, MAX_STEPS_AMOUNT);
     }
 
     /**
