@@ -6,7 +6,6 @@ import framework.utils.ValidationUtils;
 import org.apache.commons.math3.analysis.UnivariateFunction;
 import org.apache.commons.math3.analysis.integration.SimpsonIntegrator;
 import org.apache.commons.math3.geometry.euclidean.oned.Interval;
-import org.apache.commons.math3.ode.AbstractIntegrator;
 import org.apache.commons.math3.optim.MaxEval;
 import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
 import org.apache.commons.math3.optim.univariate.BrentOptimizer;
@@ -39,7 +38,12 @@ public class RunnableCommand extends AbstractRunnableCommand {
         ConsoleUtils.println(String.format("My integral - actual integral = %f", integral - actualIntegral));
     }
 
+    /**
+     * Find 'n' from: |Precision| <= max[a, b]( |f'(x)| ) * ((b - a) ^ 2) / 2n
+     * */
     private int getNPArts(LaboratoryFunction laboratoryFunction) {
+        ValidationUtils.requireNonNull(laboratoryFunction);
+
         double precision = (Double) applicationState.getVariable("precision");
         Interval interval = (Interval) applicationState.getVariable("interval");
         double factor = Math.pow(interval.getSup() - interval.getInf(), 2) / (2 * precision);
@@ -47,16 +51,23 @@ public class RunnableCommand extends AbstractRunnableCommand {
         MaxEval maxEval = new MaxEval(1000);
         double relativeTolerance = 0.001;
         double absoluteTolerance = 0.001;
-        BrentOptimizer optimizer = new BrentOptimizer(relativeTolerance, absoluteTolerance);
         UnivariateFunction absOfFirstDerivative = (x) -> Math.abs(laboratoryFunction.getFirstDerivative().value(x));
         UnivariateObjectiveFunction objective = new UnivariateObjectiveFunction(absOfFirstDerivative);
         SearchInterval searchInterval = new SearchInterval(interval.getInf(), interval.getSup());
+
+        BrentOptimizer optimizer = new BrentOptimizer(relativeTolerance, absoluteTolerance);
         double pointOfMaximum = optimizer.optimize(objective, GoalType.MAXIMIZE, searchInterval, maxEval).getPoint();
+
         return (int) Math.floor(factor * absOfFirstDerivative.value(pointOfMaximum)) + 1;
     }
 
+    /**
+     * Method of right squares
+     * */
     private double calculateIntegral(LaboratoryFunction laboratoryFunction, int nParts) {
+        ValidationUtils.requireNonNull(laboratoryFunction);
         ValidationUtils.requireGreaterOrEqualThan(nParts, 1, "Step must be >= 1");
+
         Interval interval = (Interval) applicationState.getVariable("interval");
         double dx = (interval.getSup() - interval.getInf()) / nParts;
         double result = 0;
@@ -65,8 +76,6 @@ public class RunnableCommand extends AbstractRunnableCommand {
         }
         return result * dx;
     }
-
-    ;
 
     private void assertStateSanity() {
         ValidationUtils.requireNonNull(
