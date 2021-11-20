@@ -54,7 +54,11 @@ public class RunnableCommand extends AbstractRunnableCommand {
         BrentOptimizer optimizer = new BrentOptimizer(relativeTolerance, absoluteTolerance);
         double pointOfMaximum = optimizer.optimize(objective, GoalType.MAXIMIZE, searchInterval, maxEval).getPoint();
 
-        return (int) Math.floor(factor * absOfFirstDerivative.value(pointOfMaximum)) + 1;
+        int out = (int) Math.floor(factor * absOfFirstDerivative.value(pointOfMaximum));
+        if (out < 0 || out == Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        return out + 1;
     }
 
     /**
