@@ -65,7 +65,7 @@ public class RunnableCommand extends AbstractRunnableCommand {
      * Method of right squares
      * */
     private double calculateIntegral(int nParts) {
-        ValidationUtils.requireGreaterOrEqualThan(nParts, 1, "Step must be >= 1");
+        ValidationUtils.requireGreaterOrEqualThan(nParts, 1, "nParts must be >= 1");
 
         UnivariateFunction function = (UnivariateFunction) applicationState.getVariable("function");
         Interval interval = (Interval) applicationState.getVariable("interval");
