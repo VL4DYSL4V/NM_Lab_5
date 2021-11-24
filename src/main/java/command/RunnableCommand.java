@@ -25,7 +25,7 @@ public class RunnableCommand extends AbstractRunnableCommand {
     @Override
     public void execute(String[] strings) {
         assertStateSanity();
-        int nParts = getNPArts();
+        int nParts = getNParts();
         ConsoleUtils.println(String.format("Steps: %d", nParts));
         double integral = calculateIntegral(nParts);
 
@@ -40,7 +40,7 @@ public class RunnableCommand extends AbstractRunnableCommand {
     /**
      * Find 'n' from: |Precision| <= max[a, b]( |f'(x)| ) * ((b - a) ^ 2) / 2n
      * */
-    private int getNPArts() {
+    private int getNParts() {
         double precision = (Double) applicationState.getVariable("precision");
         Interval interval = (Interval) applicationState.getVariable("interval");
         double factor = Math.pow(interval.getSup() - interval.getInf(), 2) / (2 * precision);
