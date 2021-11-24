@@ -34,6 +34,7 @@ public class RunnableCommand extends AbstractRunnableCommand {
         UnivariateFunction function = (UnivariateFunction) applicationState.getVariable("function");
         double actualIntegral = simpson.integrate(Integer.MAX_VALUE, function, interval.getInf(), interval.getSup());
 
+        ConsoleUtils.println(String.format("My integral = %f", integral));
         ConsoleUtils.println(String.format("My integral - actual integral = %f", integral - actualIntegral));
     }
 
